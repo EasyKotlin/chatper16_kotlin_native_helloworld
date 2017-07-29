@@ -1,0 +1,38 @@
+group 'com.easy.kotlin'
+version '1.0-SNAPSHOT'
+
+
+buildscript {
+    repositories {
+        mavenCentral()
+        maven {
+            url "https://dl.bintray.com/jetbrains/kotlin-native-dependencies"
+        }
+    }
+    dependencies {
+        classpath "org.jetbrains.kotlin:kotlin-native-gradle-plugin:0.3"
+    }
+}
+
+apply plugin: 'konan' // konan 就是用来编译 Kotlin 为 native 代码的插件
+
+
+konanInterop { // konanInterop 主要用来配置 Kotlin 调用 C 的接口
+    ckotlinor {
+        // defFile 'kotlinor.def' // interop 的配置文件
+        compilerOpts '-Isrc/c'
+        includeDirs "src/c" // C 头文件存放目录，可以传入多个
+        headers 'src/c/cn_kotlinor.h' // interop 的配置文件
+    }
+}
+
+konanArtifacts { //konanArtifacts 配置我们的项目
+    KotlinorApp { // build 之后会生成 KotlinorApp.kexe 可执行程序
+        inputFiles fileTree("src/kotlin") //kotlin 代码配置，项目入口 main 需要定义在这里
+        useInterop 'ckotlinor' //使用前面的 konanInterop 里面的配置  kotlinor{ ... }
+        nativeLibrary fileTree('src/c/cn_kotlinor.bc') //自己编译的 llvm 字节格式的依赖
+        target 'macbook' // 编译的目标平台
+    }
+}
+
+// 关于konan 插件详细配置文档：Gradle DSL https://github.com/JetBrains/kotlin-native/blob/master/GRADLE_PLUGIN.md
